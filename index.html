@@ -183,22 +183,22 @@
         </section>
 
          <section id="guide" class="page hidden">
-        <div class="container">
-            <h2>Kullanım Kılavuzu</h2>
-            
-            <h3>1. Yapılandırma</h3>
-            <p>Arayüzde şampiyonunuzu seçin, seviyenizi ve isteğe bağlı olarak anlık saldırı hızınızı (AS) girin. "Delay Güncelle" butonuna basmayı unutmayın!</p>
+            <div class="container">
+                <h2>Kullanım Kılavuzu</h2>
+                
+                <h3>1. Yapılandırma</h3>
+                <p>Arayüzde şampiyonunuzu seçin, seviyenizi ve isteğe bağlı olarak anlık saldırı hızınızı (AS) girin. "Delay Güncelle" butonuna basmayı unutmayın!</p>
 
-            <h3>2. Başlatma/Durdurma (Toggle)</h3>
-            <p>LoL oyununuz açıkken, bot arayüzü odaklanmış durumdayken **Spacebar (Boşluk Çubuğu)** tuşuna bir kez basarak botu **AÇIN**. Bot otomatik olarak A-Tıkla komutlarını göndermeye başlayacaktır.</p>
-            
-            <h3>3. Key Aktivasyonu</h3>
-            <p>Bot EXE'sini ilk çalıştırdığınızda, **Profil & Key** sayfanızda size verilen Key'i girerek botunuzu etkinleştirmeniz gerekmektedir.</p>
+                <h3>2. Başlatma/Durdurma (Toggle)</h3>
+                <p>LoL oyununuz açıkken, bot arayüzü odaklanmış durumdayken **Spacebar (Boşluk Çubuğu)** tuşuna bir kez basarak botu **AÇIN**. Bot otomatik olarak A-Tıkla komutlarını göndermeye başlayacaktır.</p>
+                
+                <h3>3. Key Aktivasyonu</h3>
+                <p>Bot EXE'sini ilk çalıştırdığınızda, **Profil & Key** sayfanızda size verilen Key'i girerek botunuzu etkinleştirmeniz gerekmektedir.</p>
 
-            <h3>🚨 Uyarı</h3>
-            <p class="warning-box">Güvenlik için lütfen botu sadece LoL penceresi aktif ve odaklanmış durumdayken kullanın.</p>
-        </div>
-    </section>
+                <h3>🚨 Uyarı</h3>
+                <p class="warning-box">Güvenlik için lütfen botu sadece LoL penceresi aktif ve odaklanmış durumdayken kullanın.</p>
+            </div>
+        </section>
 
     </main>
 
@@ -206,6 +206,212 @@
         <p>&copy; 2024 Kite Bot Projesi. Kontrollü Dağıtım Sistemli.</p>
     </footer>
 
-    <script src="js/script.js"></script>
+    <!-- DİKKAT: Normalde bu js/script.js olmalıydı, ancak API URL'yi kolayca gömmek için içeriği buraya taşıyoruz. -->
+    <script>
+        // --------------------------------------------------------------------------------
+        // CANLI API ADRESİ BURADA BELİRLENİR. LÜTFEN KENDİ RENDER URL'NİZİ YAPIŞTIRIN!
+        // --------------------------------------------------------------------------------
+        // ÖRNEK: const API_URL = "https://kitebot-api-xxx.onrender.com"; 
+        const API_URL = "SİZİN_RENDER_URL_NİZ_BURAYA_GELMELİ"; 
+        
+        // Firestore için Firebase yapılandırması (Kullanılmıyor, ancak API bağlantısı için gereksiz)
+        // const __app_id = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        // const __initial_auth_token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Firebase kütüphaneleri (Sadece API URL için gerekli değil, sadece iskeletini tutuyoruz)
+        // import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        // import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // import { getFirestore, doc, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let user = null;
+        let isAuthReady = false;
+
+        // Sayfa Değiştirme Fonksiyonu
+        function changePage(targetId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.add('hidden');
+            });
+            document.getElementById(targetId).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`[data-page='${targetId}']`).classList.add('active');
+        }
+
+        // Oturum Durumuna Göre Navigasyonu Güncelleme
+        function updateNavigation(currentUser) {
+            if (currentUser) {
+                user = currentUser;
+                document.getElementById('nav-login').style.display = 'none';
+                document.getElementById('nav-profile').style.display = 'block';
+                document.getElementById('nav-feedback').style.display = 'block';
+                document.getElementById('nav-download').style.display = 'block';
+
+                if (document.getElementById('auth').classList.contains('active')) {
+                    changePage('profile');
+                }
+            } else {
+                user = null;
+                document.getElementById('nav-login').style.display = 'block';
+                document.getElementById('nav-profile').style.display = 'none';
+                document.getElementById('nav-feedback').style.display = 'none';
+                document.getElementById('nav-download').style.display = 'none';
+                if (document.getElementById('profile').classList.contains('active') || document.getElementById('feedback').classList.contains('active') || document.getElementById('download').classList.contains('active')) {
+                    changePage('about');
+                }
+            }
+        }
+
+        // Giriş/Kayıt Görünümünü Değiştirme
+        function showAuth(type) {
+            document.getElementById('auth-title').textContent = type === 'login' ? 'Kullanıcı Girişi' : 'Yeni Kayıt';
+            document.getElementById('login-form').style.display = type === 'login' ? 'block' : 'none';
+            document.getElementById('register-form').style.display = type === 'register' ? 'block' : 'none';
+
+            document.querySelectorAll('.auth-toggle .toggle-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.auth-toggle .toggle-btn:nth-child(${type === 'login' ? 1 : 2})`).classList.add('active');
+        }
+
+        // Çıkış İşlemi
+        async function handleLogout() {
+            try {
+                // Burada Firebase signOut komutu olmalıydı. API ile sadece state'i güncelliyoruz.
+                updateNavigation(null);
+                showMessage('login-message', 'Başarıyla çıkış yapıldı.', 'success');
+                changePage('auth');
+            } catch (error) {
+                console.error("Çıkış hatası:", error);
+            }
+        }
+
+        // API Çağrısı Yardımcı Fonksiyon
+        async function fetchAPI(endpoint, data = {}) {
+            const token = user ? "simulated_token_" + user.uid : ""; 
+            const url = `${API_URL}/${endpoint}`;
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(data)
+                });
+
+                const json = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(json.error || 'Bilinmeyen bir hata oluştu');
+                }
+                return json;
+            } catch (error) {
+                console.error(`API ${endpoint} hatası:`, error);
+                throw error;
+            }
+        }
+
+        // Giriş/Kayıt Formu İşleyicisi
+        async function handleAuth(event, type) {
+            event.preventDefault();
+            const email = document.getElementById(`${type}-email`).value;
+            const password = document.getElementById(`${type}-password`).value;
+            const username = type === 'register' ? document.getElementById('register-username').value : '';
+            const messageElement = document.getElementById(`${type}-message`);
+            messageElement.textContent = 'İşleniyor...';
+            messageElement.classList.remove('error', 'success');
+
+            try {
+                const endpoint = type === 'register' ? 'register' : 'login';
+                const data = type === 'register' ? { email, password, username } : { email, password };
+                
+                const response = await fetchAPI(endpoint, data);
+
+                // Başarılı olduğunda simüle edilmiş bir kullanıcı oluştur
+                const simulatedUser = { 
+                    uid: response.user_id || `simulated_${Math.random().toString(36).substr(2, 9)}`,
+                    displayName: response.username || username || email.split('@')[0]
+                };
+
+                updateNavigation(simulatedUser);
+                showMessage(messageElement.id, response.message || (type === 'register' ? 'Kayıt başarılı! Profil sayfasına yönlendiriliyorsunuz.' : 'Giriş başarılı!'), 'success');
+                
+                // Profil sayfasını güncelle
+                document.getElementById('profile-username').textContent = simulatedUser.displayName;
+                document.getElementById('trial-key').textContent = response.key || 'KEY-ALINAMADI-HATA';
+                document.getElementById('key-expiry-date').textContent = response.expiry_date || '3 Gün Kaldı';
+
+                setTimeout(() => changePage('profile'), 1500);
+
+            } catch (error) {
+                const errorMessage = error.message.includes('network') ? 'Sunucuya ulaşılamıyor. API URL'sini kontrol edin.' : error.message;
+                showMessage(messageElement.id, `Hata: ${errorMessage}`, 'error');
+            }
+        }
+
+        // Geri Bildirim Gönderme İşlemi
+        async function submitFeedback(event) {
+            event.preventDefault();
+            const form = event.target;
+            const messageElement = document.getElementById('feedback-message');
+            messageElement.textContent = 'Gönderiliyor...';
+            messageElement.classList.remove('error', 'success');
+
+            if (!user) {
+                showMessage('feedback-message', 'Hata: Geri bildirim göndermek için önce giriş yapmalısınız.', 'error');
+                return;
+            }
+
+            const feedbackText = document.getElementById('feedback-text').value;
+            const feedbackType = form.elements['feedback-type'].value;
+
+            try {
+                const response = await fetchAPI('feedback', { 
+                    feedback_text: feedbackText, 
+                    feedback_type: feedbackType 
+                });
+                
+                showMessage('feedback-message', response.message || 'Geri bildiriminiz başarıyla iletildi! Teşekkür ederiz.', 'success');
+                form.reset();
+            } catch (error) {
+                showMessage('feedback-message', `Hata: ${error.message}`, 'error');
+            }
+        }
+
+        // Mesaj Kutusu Yönetimi
+        function showMessage(elementId, text, type) {
+            const element = typeof elementId === 'string' ? document.getElementById(elementId) : elementId;
+            element.textContent = text;
+            element.classList.remove('error', 'success');
+            element.classList.add(type);
+        }
+
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', () => {
+            // İlk sayfa olarak 'about'u göster
+            changePage('about');
+            
+            // Navigasyon linkleri için olay dinleyicisi ekle
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('data-page');
+
+                    // Giriş yapılmadıysa ve korumalı sayfaya gidiyorsa
+                    if (!user && (targetId === 'profile' || targetId === 'feedback' || targetId === 'download')) {
+                        changePage('auth');
+                        showMessage('login-message', 'Bu sayfaya erişim için lütfen giriş yapın veya kayıt olun.', 'error');
+                    } else {
+                        changePage(targetId);
+                    }
+                });
+            });
+
+            // Başlangıç navigasyon durumunu ayarla (Çıkış yapmış kabul ediyoruz)
+            updateNavigation(null); 
+            isAuthReady = true; 
+        });
+    </script>
 </body>
 </html>
